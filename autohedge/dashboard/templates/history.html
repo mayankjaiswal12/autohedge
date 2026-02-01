@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoHedge - History</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🏦 AutoHedge</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/backtest">Backtest</a>
+            <a href="/history" class="active">History</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- History Summary -->
+        <div class="section-header">
+            <h2>📊 History Overview</h2>
+        </div>
+
+        <div class="summary-grid" id="historySummary">
+            <div class="summary-card">
+                <div class="summary-label">Total Backtests</div>
+                <div class="summary-value" id="totalBacktests">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Total Trades</div>
+                <div class="summary-value" id="totalTrades">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Overall Win Rate</div>
+                <div class="summary-value" id="overallWinRate">0%</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Best Return</div>
+                <div class="summary-value" id="bestReturn">0%</div>
+            </div>
+        </div>
+
+        <!-- Performance by Stock -->
+        <div class="section-header">
+            <h2>📈 Performance by Stock</h2>
+        </div>
+
+        <div class="table-container">
+            <table class="trade-table">
+                <thead>
+                    <tr>
+                        <th>Stock</th>
+                        <th>Total Backtests</th>
+                        <th>Total Trades</th>
+                        <th>Win Rate</th>
+                        <th>Avg Return</th>
+                        <th>Best Return</th>
+                        <th>Worst Return</th>
+                        <th>Avg Sharpe</th>
+                    </tr>
+                </thead>
+                <tbody id="stockPerformanceBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Past Backtest Results -->
+        <div class="section-header">
+            <h2>📋 Past Backtests</h2>
+            <div class="filter-group">
+                <select id="historyStockFilter" onchange="filterHistory()">
+                    <option value="all">All Stocks</option>
+                </select>
+                <select id="historySortFilter" onchange="filterHistory()">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="return-desc">Best Return</option>
+                    <option value="return-asc">Worst Return</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="historyLoading">
+            <div class="loading">Loading history...</div>
+        </div>
+
+        <div class="history-list" id="historyList"></div>
+
+        <!-- No History Message -->
+        <div id="noHistory" class="hidden">
+            <div class="no-data">
+                <p>📭 No backtest history found.</p>
+                <p>Run a backtest from the <a href="/backtest">Backtest</a> page to see results here.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/history.js"></script>
+</body>
+</html>

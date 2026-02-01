@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoHedge Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🏦 AutoHedge</div>
+        <div class="nav-links">
+            <a href="/" class="active">Dashboard</a>
+            <a href="/backtest">Backtest</a>
+            <a href="/history">History</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Stock Cards -->
+        <div class="section-header">
+            <h2>📈 Live Market</h2>
+            <div class="stock-input">
+                <input type="text" id="stockSymbol" placeholder="Enter symbol (e.g. TSLA)" />
+                <button onclick="addStock()">+ Add</button>
+            </div>
+        </div>
+
+        <div class="stock-grid" id="stockGrid">
+            <div class="loading">Loading market data...</div>
+        </div>
+
+        <!-- Portfolio Summary -->
+        <div class="section-header">
+            <h2>💰 Portfolio Summary</h2>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Total Stocks Tracked</div>
+                <div class="summary-value" id="totalStocks">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Best Performer</div>
+                <div class="summary-value" id="bestPerformer">-</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Worst Performer</div>
+                <div class="summary-value" id="worstPerformer">-</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Market Status</div>
+                <div class="summary-value" id="marketStatus">-</div>
+            </div>
+        </div>
+
+        <!-- Quick Backtest -->
+        <div class="section-header">
+            <h2>⚡ Quick Backtest</h2>
+        </div>
+
+        <div class="quick-backtest">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Stocks</label>
+                    <input type="text" id="btStocks" value="AAPL,NVDA,MSFT" placeholder="AAPL,NVDA,MSFT" />
+                </div>
+                <div class="form-group">
+                    <label>Capital ($)</label>
+                    <input type="number" id="btCapital" value="100000" />
+                </div>
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" id="btStart" value="2024-01-01" />
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" id="btEnd" value="2025-01-01" />
+                </div>
+                <button class="btn-primary" onclick="runQuickBacktest()">Run Backtest</button>
+            </div>
+        </div>
+
+        <!-- Backtest Results -->
+        <div id="backtestResults" class="hidden">
+            <div class="section-header">
+                <h2>📊 Backtest Results</h2>
+            </div>
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>

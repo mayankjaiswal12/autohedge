@@ -11,6 +11,8 @@ services:
       - OLLAMA_MODEL=qwen2.5:7b
       - OUTPUT_DIR=/app/outputs
       - WORKSPACE_DIR=/app/agent_workspace
+    ports:
+      - "8000:8000"
     networks:
       - ollama_default
     stdin_open: true

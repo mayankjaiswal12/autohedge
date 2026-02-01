@@ -4,76 +4,92 @@ Real-time stock data providers
 
 import yfinance as yf
 import pandas as pd
+import numpy as np
 from typing import Dict, Optional, List
 from datetime import datetime
 import requests
 
 
+def convert_value(value):
+    """Convert numpy types to native Python types"""
+    if value is None:
+        return None
+    if isinstance(value, (np.integer,)):
+        return int(value)
+    if isinstance(value, (np.floating,)):
+        return float(value)
+    if isinstance(value, (np.ndarray,)):
+        return value.tolist()
+    if isinstance(value, (np.bool_,)):
+        return bool(value)
+    return value
+
+
 class YFinanceProvider:
     """Yahoo Finance data provider"""
-    
+
     def __init__(self):
         self.name = "Yahoo Finance"
-    
+
     def get_stock_data(self, symbol: str, period: str = "1mo") -> Dict:
         """Get comprehensive stock data"""
         try:
             stock = yf.Ticker(symbol)
             info = stock.info
             hist = stock.history(period=period)
-            
-            current_price = hist['Close'].iloc[-1] if len(hist) > 0 else None
-            
+
+            current_price = float(hist['Close'].iloc[-1]) if len(hist) > 0 else None
+
             data = {
                 "symbol": symbol,
-                "current_price": current_price,
+                "current_price": convert_value(current_price),
                 "currency": info.get("currency", "USD"),
-                "market_cap": info.get("marketCap"),
-                "volume": hist['Volume'].iloc[-1] if len(hist) > 0 else None,
-                "day_change": self._calculate_change(hist, 1),
-                "week_change": self._calculate_change(hist, 5),
-                "month_change": self._calculate_change(hist, 20),
-                "rsi": self._calculate_rsi(hist),
-                "sma_20": self._calculate_sma(hist, 20),
-                "sma_50": self._calculate_sma(hist, 50),
-                "sma_200": self._calculate_sma(hist, 200),
-                "pe_ratio": info.get("trailingPE"),
-                "forward_pe": info.get("forwardPE"),
-                "peg_ratio": info.get("pegRatio"),
-                "price_to_book": info.get("priceToBook"),
-                "dividend_yield": info.get("dividendYield"),
-                "profit_margins": info.get("profitMargins"),
-                "revenue_growth": info.get("revenueGrowth"),
-                "earnings_growth": info.get("earningsGrowth"),
-                "beta": info.get("beta"),
-                "target_mean_price": info.get("targetMeanPrice"),
+                "market_cap": convert_value(info.get("marketCap")),
+                "volume": convert_value(int(hist['Volume'].iloc[-1])) if len(hist) > 0 else None,
+                "day_change": convert_value(self._calculate_change(hist, 1)),
+                "week_change": convert_value(self._calculate_change(hist, 5)),
+                "month_change": convert_value(self._calculate_change(hist, 20)),
+                "rsi": convert_value(self._calculate_rsi(hist)),
+                "sma_20": convert_value(self._calculate_sma(hist, 20)),
+                "sma_50": convert_value(self._calculate_sma(hist, 50)),
+                "sma_200": convert_value(self._calculate_sma(hist, 200)),
+                "pe_ratio": convert_value(info.get("trailingPE")),
+                "forward_pe": convert_value(info.get("forwardPE")),
+                "peg_ratio": convert_value(info.get("pegRatio")),
+                "price_to_book": convert_value(info.get("priceToBook")),
+                "dividend_yield": convert_value(info.get("dividendYield")),
+                "profit_margins": convert_value(info.get("profitMargins")),
+                "revenue_growth": convert_value(info.get("revenueGrowth")),
+                "earnings_growth": convert_value(info.get("earningsGrowth")),
+                "beta": convert_value(info.get("beta")),
+                "target_mean_price": convert_value(info.get("targetMeanPrice")),
                 "recommendation": info.get("recommendationKey"),
                 "sector": info.get("sector"),
                 "industry": info.get("industry"),
                 "full_name": info.get("longName"),
-                "52_week_high": info.get("fiftyTwoWeekHigh"),
-                "52_week_low": info.get("fiftyTwoWeekLow"),
+                "52_week_high": convert_value(info.get("fiftyTwoWeekHigh")),
+                "52_week_low": convert_value(info.get("fiftyTwoWeekLow")),
                 "timestamp": datetime.now().isoformat(),
                 "data_source": self.name
             }
-            
+
             return data
-            
+
         except Exception as e:
             print(f"Error fetching data for {symbol}: {e}")
             return {"error": str(e), "symbol": symbol}
-    
+
     def _calculate_change(self, hist: pd.DataFrame, periods: int) -> Optional[float]:
         """Calculate percentage change over periods"""
         try:
             if len(hist) > periods:
-                old_price = hist['Close'].iloc[-periods-1]
+                old_price = hist['Close'].iloc[-periods - 1]
                 new_price = hist['Close'].iloc[-1]
-                return ((new_price - old_price) / old_price) * 100
+                return float(((new_price - old_price) / old_price) * 100)
         except:
             pass
         return None
-    
+
     def _calculate_rsi(self, hist: pd.DataFrame, periods: int = 14) -> Optional[float]:
         """Calculate RSI"""
         try:
@@ -84,19 +100,19 @@ class YFinanceProvider:
             loss = (-delta.where(delta < 0, 0)).rolling(window=periods).mean()
             rs = gain / loss
             rsi = 100 - (100 / (1 + rs))
-            return rsi.iloc[-1]
+            return float(rsi.iloc[-1])
         except:
             return None
-    
+
     def _calculate_sma(self, hist: pd.DataFrame, periods: int) -> Optional[float]:
         """Calculate Simple Moving Average"""
         try:
             if len(hist) >= periods:
-                return hist['Close'].rolling(window=periods).mean().iloc[-1]
+                return float(hist['Close'].rolling(window=periods).mean().iloc[-1])
         except:
             pass
         return None
-    
+
     def get_multiple_stocks(self, symbols: List[str]) -> Dict[str, Dict]:
         """Get data for multiple stocks"""
         results = {}
@@ -107,12 +123,12 @@ class YFinanceProvider:
 
 class AlphaVantageProvider:
     """Alpha Vantage data provider (backup)"""
-    
+
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or "demo"
         self.base_url = "https://www.alphavantage.co/query"
         self.name = "Alpha Vantage"
-    
+
     def get_stock_data(self, symbol: str) -> Dict:
         """Get stock quote from Alpha Vantage"""
         try:
@@ -121,11 +137,11 @@ class AlphaVantageProvider:
                 "symbol": symbol,
                 "apikey": self.api_key
             }
-            
+
             response = requests.get(self.base_url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
-            
+
             if "Global Quote" in data:
                 quote = data["Global Quote"]
                 return {
@@ -139,7 +155,7 @@ class AlphaVantageProvider:
                 }
             else:
                 return {"error": "No data returned", "symbol": symbol}
-                
+
         except Exception as e:
             print(f"Error fetching data from Alpha Vantage: {e}")
             return {"error": str(e), "symbol": symbol}
@@ -147,7 +163,7 @@ class AlphaVantageProvider:
 
 class StockDataManager:
     """Unified stock data manager"""
-    
+
     def __init__(self, primary: str = "yfinance", alpha_vantage_key: Optional[str] = None):
         self.yfinance = YFinanceProvider()
         self.alphavantage = AlphaVantageProvider(alpha_vantage_key)
@@ -156,33 +172,33 @@ class StockDataManager:
             "yfinance": self.yfinance,
             "alphavantage": self.alphavantage
         }
-    
+
     def get_stock_data(self, symbol: str, **kwargs) -> Dict:
         """Get stock data with fallback"""
         provider = self.providers.get(self.primary, self.yfinance)
-        
+
         print(f"Fetching data for {symbol} from {provider.name}...")
         data = provider.get_stock_data(symbol, **kwargs)
-        
+
         if "error" in data and self.primary == "yfinance":
             print(f"Falling back to Alpha Vantage...")
             data = self.alphavantage.get_stock_data(symbol)
-        
+
         return data
-    
+
     def get_multiple_stocks(self, symbols: List[str]) -> Dict[str, Dict]:
         """Get data for multiple stocks"""
         results = {}
         for symbol in symbols:
             results[symbol] = self.get_stock_data(symbol)
         return results
-    
+
     def format_for_analysis(self, data: Dict) -> str:
         """Format stock data for AI analysis"""
         if "error" in data:
             return f"Error fetching data for {data.get('symbol')}: {data['error']}"
-        
-        price = data.get('current_price', 0)
+
+        price = data.get('current_price', 0) or 0
         day_chg = data.get('day_change') or 0
         week_chg = data.get('week_change') or 0
         month_chg = data.get('month_change') or 0
@@ -191,7 +207,7 @@ class StockDataManager:
         sma_50 = data.get('sma_50')
         sma_200 = data.get('sma_200')
         market_cap = data.get('market_cap') or 0
-        
+
         formatted = f"""
 REAL-TIME MARKET DATA for {data.get('symbol', 'N/A')}
 ============================================================

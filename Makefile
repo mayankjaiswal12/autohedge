@@ -1,4 +1,4 @@
-.PHONY: build run shell stop clean analyze backtest help
+.PHONY: build run shell stop clean analyze backtest dashboard help
 
 IMAGE_NAME=autohedge
 CONTAINER_NAME=autohedge
@@ -8,34 +8,37 @@ help:
 	@echo "AutoHedge Commands:"
 	@echo ""
 	@echo "Setup:"
-	@echo "  make build          - Build AutoHedge image"
-	@echo "  make run            - Start AutoHedge container"
-	@echo "  make shell          - Open shell in container"
-	@echo "  make stop           - Stop container"
-	@echo "  make clean          - Remove container and image"
-	@echo "  make logs           - View logs"
+	@echo "  make build            - Build AutoHedge image"
+	@echo "  make run              - Start AutoHedge container"
+	@echo "  make shell            - Open shell in container"
+	@echo "  make stop             - Stop container"
+	@echo "  make clean            - Remove container and image"
+	@echo "  make logs             - View logs"
 	@echo ""
 	@echo "Trading:"
-	@echo "  make analyze        - Run sample NVDA analysis"
+	@echo "  make analyze          - Run sample NVDA analysis"
 	@echo ""
 	@echo "Backtesting:"
-	@echo "  make backtest       - Run sample AAPL backtest (1 year)"
-	@echo "  make backtest-multi - Run multi-stock backtest"
+	@echo "  make backtest         - Run sample AAPL backtest"
+	@echo "  make backtest-multi   - Run multi-stock backtest"
+	@echo ""
+	@echo "Dashboard:"
+	@echo "  make dashboard        - Start web dashboard"
 
 build:
 	docker build -t $(IMAGE_NAME) .
 
 run:
 	docker-compose up -d
-	@echo "✅ AutoHedge started and connected to Ollama"
-	@echo "Run 'make test' to verify connection"
+	@echo "✅ AutoHedge started"
+	@echo "Run 'make dashboard' to start the web dashboard"
 
 shell:
 	docker exec -it $(CONTAINER_NAME) /bin/bash
 
 test:
 	@echo "Testing Ollama connection..."
-	@docker exec -it $(CONTAINER_NAME) curl -s http://ollama:11434/api/tags > /dev/null && \
+	@docker exec $(CONTAINER_NAME) curl -s http://ollama:11434/api/tags > /dev/null && \
 		echo "✅ Connected to Ollama!" || \
 		echo "❌ Cannot connect to Ollama"
 
@@ -64,6 +67,11 @@ backtest-multi:
 		--stop-loss 5 \
 		--take-profit 10 \
 		--holding-period 30
+
+dashboard:
+	docker exec -it $(CONTAINER_NAME) python -m autohedge.main dashboard \
+		--host 0.0.0.0 \
+		--port 8000
 
 stop:
 	docker-compose down
