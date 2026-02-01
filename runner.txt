@@ -1,0 +1,4 @@
+docker exec -it autohedge python -m autohedge.main \                       
+  --stocks TSLA \
+  --task "Tesla Q1 2026 analysis with current market data" \
+  --allocation 80000
