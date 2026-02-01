@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  autohedge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autohedge
+    volumes:
+      - ./outputs:/app/outputs
+      - ./agent_workspace:/app/agent_workspace
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:7b
+      - OUTPUT_DIR=/app/outputs
+      - WORKSPACE_DIR=/app/agent_workspace
+    networks:
+      - ollama_default
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null
+
+networks:
+  ollama_default:
+    external: true

@@ -29,6 +29,3 @@ trade_analysis_*.json
 # Environment
 .env
 .env.local
-
-# Docker
-docker-compose*.yml

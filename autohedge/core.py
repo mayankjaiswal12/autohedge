@@ -1,5 +1,5 @@
 """
-Core AutoHedge system
+Core AutoHedge system with Real-Time Data
 """
 
 import json
@@ -17,17 +17,19 @@ from .agents.executor import ExecutionAgent
 
 
 class AutoHedge:
-    """Main AutoHedge system using Ollama"""
+    """Main AutoHedge system using Ollama with Real-Time Data"""
     
     def __init__(
         self,
         stocks: List[str],
         ollama_url: Optional[str] = None,
         model: Optional[str] = None,
-        allocation: Optional[float] = None
+        allocation: Optional[float] = None,
+        use_real_data: bool = True
     ):
         self.stocks = stocks
         self.allocation = allocation or Config.DEFAULT_ALLOCATION
+        self.use_real_data = use_real_data
         
         # Priority: parameter > environment variable > config default
         final_url = ollama_url or Config.get_ollama_url()
@@ -37,30 +39,31 @@ class AutoHedge:
         print(f"   Ollama URL: {final_url}")
         print(f"   Model: {final_model}")
         print(f"   Allocation: ${self.allocation:,.2f}")
+        print(f"   Real-Time Data: {'Enabled ✅' if use_real_data else 'Disabled'}")
         
         # Initialize Ollama client
         self.ollama = OllamaClient(base_url=final_url, model=final_model)
         
-        # Initialize agents
-        self.director = TradingDirector(stocks, self.ollama)
-        self.quant = QuantAnalyst(self.ollama)
+        # Initialize agents with real-time data capability
+        self.director = TradingDirector(stocks, self.ollama, use_real_data=use_real_data)
+        self.quant = QuantAnalyst(self.ollama, use_real_data=use_real_data)
         self.risk_manager = RiskManager(self.ollama)
         self.executor = ExecutionAgent(self.ollama)
     
     def run(self, task: str, stock: Optional[str] = None) -> AutoHedgeOutput:
-        """Run the complete trading pipeline"""
+        """Run the complete trading pipeline with real-time data"""
         current_stock = stock or self.stocks[0]
         
         print(f"\n{'='*80}")
         print(f"🏦 AutoHedge Analysis: {current_stock}")
         print(f"{'='*80}\n")
         
-        # Step 1: Generate thesis
-        print(f"🎯 Director: Generating thesis...")
+        # Step 1: Generate thesis (with real-time data)
+        print(f"🎯 Director: Generating thesis with real-time data...")
         thesis = self.director.generate_thesis(task, current_stock)
         
-        # Step 2: Quant analysis
-        print(f"📊 Quant: Analyzing {current_stock}...")
+        # Step 2: Quant analysis (with real-time data)
+        print(f"📊 Quant: Analyzing {current_stock} with market data...")
         quant_analysis = self.quant.analyze(current_stock, thesis)
         
         # Step 3: Risk assessment
