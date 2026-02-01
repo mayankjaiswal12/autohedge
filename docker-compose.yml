@@ -1,8 +1,6 @@
 services:
   autohedge:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: autohedge
     container_name: autohedge
     volumes:
       - ./autohedge:/app/autohedge
