@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   autohedge:
     build:
@@ -7,6 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: autohedge
     volumes:
+      - ./autohedge:/app/autohedge
       - ./outputs:/app/outputs
       - ./agent_workspace:/app/agent_workspace
     environment:
