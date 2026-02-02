@@ -654,3 +654,185 @@ body {
 
 /* Utility */
 .hidden { display: none !important; }
+
+/* ============================================================
+   Analysis Page Styles
+   ============================================================ */
+
+/* Quick Tasks */
+.quick-tasks {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.btn-quick {
+    background: #0f1117;
+    border: 1px solid #2d3148;
+    color: #94a3b8;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.btn-quick:hover {
+    border-color: #6366f1;
+    color: #e2e8f0;
+    background: #1a1d2e;
+}
+
+/* Analysis Header */
+.analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: #1a1d2e;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.analysis-header h2 {
+    font-size: 1.4rem;
+    color: #e2e8f0;
+    margin-bottom: 4px;
+}
+
+.analysis-header p {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.analysis-header-right span {
+    color: #64748b;
+    font-size: 0.78rem;
+}
+
+/* Order Card */
+.order-card {
+    background: #1a1d2e;
+    border: 1px solid #6366f1;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+.order-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.order-item {
+    flex: 1;
+    min-width: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+    background: #0f1117;
+    border-radius: 8px;
+}
+
+.order-label {
+    font-size: 0.68rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.order-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+.order-value.buy { color: #10b981; }
+.order-value.sell { color: #f43f5e; }
+.order-value.pending {
+    color: #f59e0b;
+    font-size: 0.78rem;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+/* Risk Details */
+.risk-details {
+    background: #1a1d2e;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 10px;
+}
+
+.risk-details h4 {
+    font-size: 0.78rem;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.risk-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.risk-list li {
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    padding-left: 20px;
+    position: relative;
+}
+
+.risk-list li::before {
+    content: "⚠️";
+    position: absolute;
+    left: 0;
+    font-size: 0.75rem;
+}
+
+/* Analysis Card */
+.analysis-card {
+    background: #1a1d2e;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 10px;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.analysis-card p {
+    margin-bottom: 10px;
+}
+
+/* Decision colors */
+.decision-approved {
+    color: #10b981 !important;
+}
+
+.decision-rejected {
+    color: #f43f5e !important;
+}
+
+.decision-modify {
+    color: #f59e0b !important;
+}
+
+/* Risk level colors */
+.risk-low { color: #10b981 !important; }
+.risk-medium { color: #f59e0b !important; }
+.risk-high { color: #f43f5e !important; }

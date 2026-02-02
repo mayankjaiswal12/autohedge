@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoHedge - Live Analysis</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🏦 AutoHedge</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/backtest">Backtest</a>
+            <a href="/analysis" class="active">Analysis</a>
+            <a href="/history">History</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Analysis Configuration -->
+        <div class="section-header">
+            <h2>🤖 Live AI Analysis</h2>
+        </div>
+
+        <div class="config-card">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Stock Symbol</label>
+                    <input type="text" id="analysisStock" placeholder="e.g. AAPL" />
+                </div>
+                <div class="form-group">
+                    <label>Allocation ($)</label>
+                    <input type="number" id="analysisAllocation" value="50000" min="1000" step="1000" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Analysis Task</label>
+                    <input type="text" id="analysisTask" placeholder="e.g. Analyze for long-term investment opportunity" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Quick Tasks</label>
+                    <div class="quick-tasks">
+                        <button class="btn-quick" onclick="setQuickTask('Analyze for long-term investment opportunity')">📈 Long-term</button>
+                        <button class="btn-quick" onclick="setQuickTask('Analyze for short-term trading opportunity')">⚡ Short-term</button>
+                        <button class="btn-quick" onclick="setQuickTask('Analyze risk and downside scenarios')">⚠️ Risk Analysis</button>
+                        <button class="btn-quick" onclick="setQuickTask('Compare valuation and growth potential')">📊 Valuation</button>
+                        <button class="btn-quick" onclick="setQuickTask('Analyze dividend and income potential')">💰 Dividend</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary btn-large" id="runAnalysisBtn" onclick="runAnalysis()">🚀 Run Analysis</button>
+                <button class="btn-secondary" onclick="clearAnalysis()">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="analysisLoading" class="hidden">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <div class="loading-steps">
+                    <p id="loadingStep">🎯 Director: Generating thesis...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="analysisResults" class="hidden">
+
+            <!-- Header -->
+            <div class="analysis-header">
+                <div class="analysis-header-left">
+                    <h2 id="analysisResultStock"></h2>
+                    <p id="analysisResultTask"></p>
+                </div>
+                <div class="analysis-header-right">
+                    <span id="analysisResultTime"></span>
+                </div>
+            </div>
+
+            <!-- Order Card -->
+            <div class="order-card" id="orderCard">
+                <div class="order-row">
+                    <div class="order-item">
+                        <span class="order-label">Action</span>
+                        <span class="order-value" id="orderAction"></span>
+                    </div>
+                    <div class="order-item">
+                        <span class="order-label">Stock</span>
+                        <span class="order-value" id="orderStock"></span>
+                    </div>
+                    <div class="order-item">
+                        <span class="order-label">Quantity</span>
+                        <span class="order-value" id="orderQuantity"></span>
+                    </div>
+                    <div class="order-item">
+                        <span class="order-label">Allocation</span>
+                        <span class="order-value" id="orderAllocation"></span>
+                    </div>
+                    <div class="order-item">
+                        <span class="order-label">Stop Loss</span>
+                        <span class="order-value" id="orderStopLoss"></span>
+                    </div>
+                    <div class="order-item">
+                        <span class="order-label">Status</span>
+                        <span class="order-value" id="orderStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Assessment -->
+            <div class="section-header">
+                <h2>⚠️ Risk Assessment</h2>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-label">Decision</div>
+                    <div class="summary-value" id="riskDecision"></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Risk Level</div>
+                    <div class="summary-value" id="riskLevel"></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Position Size</div>
+                    <div class="summary-value" id="riskPosition"></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Stop Loss</div>
+                    <div class="summary-value" id="riskStopLoss"></div>
+                </div>
+            </div>
+
+            <!-- Risk details -->
+            <div class="risk-details" id="riskDetails"></div>
+
+            <!-- Thesis -->
+            <div class="section-header">
+                <h2>💡 Trading Thesis</h2>
+            </div>
+            <div class="analysis-card" id="thesisContent"></div>
+
+            <!-- Quant Analysis -->
+            <div class="section-header">
+                <h2>📊 Quantitative Analysis</h2>
+            </div>
+            <div class="analysis-card" id="quantContent"></div>
+        </div>
+
+        <!-- Analysis History -->
+        <div class="section-header">
+            <h2>📋 Past Analyses</h2>
+        </div>
+        <div id="analysisHistoryLoading">
+            <div class="loading">Loading past analyses...</div>
+        </div>
+        <div class="history-list" id="analysisHistoryList"></div>
+        <div id="noAnalysisHistory" class="hidden">
+            <div class="no-data">
+                <p>📭 No analysis history found.</p>
+                <p>Run an analysis above to see results here.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/analysis.js"></script>
+</body>
+</html>

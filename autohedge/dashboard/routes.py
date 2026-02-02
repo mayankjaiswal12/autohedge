@@ -48,13 +48,15 @@ class BacktestRequest(BaseModel):
     holding_period: int = 30
 
 
-class StockRequest(BaseModel):
-    symbol: str
+class LiveAnalysisRequest(BaseModel):
+    stock: str
+    task: str
+    allocation: float = 50000
 
 
-# ============================================================================
+# ============================================================
 # Page Routes
-# ============================================================================
+# ============================================================
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
@@ -74,9 +76,15 @@ async def history_page(request: Request):
     return templates.TemplateResponse("history.html", {"request": request})
 
 
-# ============================================================================
+@app.get("/analysis", response_class=HTMLResponse)
+async def analysis_page(request: Request):
+    """Live analysis page"""
+    return templates.TemplateResponse("analysis.html", {"request": request})
+
+
+# ============================================================
 # API Routes
-# ============================================================================
+# ============================================================
 
 @app.get("/api/stock/{symbol}")
 async def get_stock_data(symbol: str):
@@ -134,13 +142,69 @@ async def run_backtest(request: BacktestRequest):
         return {"status": "error", "message": str(e)}
 
 
+@app.post("/api/analysis")
+async def run_live_analysis(request: LiveAnalysisRequest):
+    """Run live AI analysis using Ollama"""
+    try:
+        from ..core import AutoHedge
+
+        system = AutoHedge(
+            stocks=[request.stock],
+            allocation=request.allocation
+        )
+
+        result = system.run(task=request.task, stock=request.stock)
+
+        # Parse risk assessment
+        risk_data = json.loads(result.risk_assessment)
+
+        response_data = {
+            "id": result.id,
+            "stock": result.current_stock,
+            "task": result.task,
+            "thesis": result.thesis,
+            "quant_analysis": result.quant_analysis,
+            "risk_assessment": risk_data,
+            "order": result.order,
+            "timestamp": result.timestamp
+        }
+
+        # Save analysis
+        filename = os.path.join(OUTPUTS_DIR, f"analysis_{result.id}.json")
+        os.makedirs(OUTPUTS_DIR, exist_ok=True)
+        with open(filename, 'w') as f:
+            json.dump(response_data, f, indent=2)
+
+        return {"status": "success", "data": response_data}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/analysis/history")
+async def get_analysis_history():
+    """Get all saved analysis results"""
+    try:
+        results = []
+        pattern = os.path.join(OUTPUTS_DIR, "analysis_*.json")
+
+        for filepath in sorted(glob.glob(pattern), reverse=True):
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+                data['filename'] = os.path.basename(filepath)
+                results.append(data)
+
+        return {"status": "success", "data": results}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @app.get("/api/history")
 async def get_history():
     """Get all saved backtest results"""
     try:
         results = []
         pattern = os.path.join(OUTPUTS_DIR, "backtest_*.json")
-        
+
         for filepath in sorted(glob.glob(pattern), reverse=True):
             with open(filepath, 'r') as f:
                 data = json.load(f)
