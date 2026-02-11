@@ -7,3 +7,7 @@ fastapi>=0.109.0
 uvicorn>=0.27.0
 jinja2>=3.1.2
 aiofiles>=23.0.0
+
+# Portfolio Optimization (v6.0.0)
+scipy>=1.11.0
+matplotlib>=3.7.0

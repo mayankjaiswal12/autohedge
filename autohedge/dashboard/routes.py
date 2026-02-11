@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from ..backtesting import Backtester
 from ..data_providers import StockDataManager
+from ..portfolio_optimizer import PortfolioOptimizer
 
 
 # Initialize FastAPI app
@@ -54,6 +55,16 @@ class LiveAnalysisRequest(BaseModel):
     allocation: float = 50000
 
 
+class PortfolioOptimizeRequest(BaseModel):
+    """Request model for portfolio optimization"""
+    stocks: List[str]
+    start_date: str
+    end_date: str
+    capital: float = 100000
+    optimization_type: str = "sharpe"
+    target_return: Optional[float] = None
+
+
 # ============================================================
 # Page Routes
 # ============================================================
@@ -80,6 +91,12 @@ async def history_page(request: Request):
 async def analysis_page(request: Request):
     """Live analysis page"""
     return templates.TemplateResponse("analysis.html", {"request": request})
+
+
+@app.get("/portfolio", response_class=HTMLResponse)
+async def portfolio_page(request: Request):
+    """Portfolio optimizer page"""
+    return templates.TemplateResponse("portfolio.html", {"request": request})
 
 
 # ============================================================
@@ -176,6 +193,81 @@ async def run_live_analysis(request: LiveAnalysisRequest):
             json.dump(response_data, f, indent=2)
 
         return {"status": "success", "data": response_data}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/portfolio/optimize")
+async def optimize_portfolio(request: PortfolioOptimizeRequest):
+    """Run portfolio optimization"""
+    try:
+        optimizer = PortfolioOptimizer(risk_free_rate=0.02)
+        
+        # Prepare data
+        optimizer.prepare_data(
+            stocks=request.stocks,
+            start_date=request.start_date,
+            end_date=request.end_date
+        )
+        
+        # Run optimization based on type
+        if request.optimization_type == "sharpe":
+            result = optimizer.optimize_sharpe()
+        elif request.optimization_type == "min_vol":
+            result = optimizer.optimize_min_volatility()
+        elif request.optimization_type == "target_return":
+            if request.target_return is None:
+                return {"status": "error", "message": "target_return required for target_return optimization"}
+            try:
+                result = optimizer.optimize_target_return(request.target_return)
+            except ValueError as e:
+                min_ret, max_ret = optimizer.get_return_range()
+                return {
+                    "status": "error",
+                    "message": f"{str(e)}. Achievable range: {min_ret*100:.1f}% to {max_ret*100:.1f}%"
+                }
+        else:
+            return {"status": "error", "message": "Invalid optimization_type"}
+        
+        # Calculate efficient frontier
+        result['efficient_frontier'] = optimizer.calculate_efficient_frontier(n_points=50)
+        
+        # Calculate allocations
+        allocations = optimizer.calculate_allocations(result['weights'], request.capital)
+        result['allocations'] = allocations
+        result['stocks'] = request.stocks
+        result['capital'] = request.capital
+        result['optimization_type'] = request.optimization_type
+        result['timestamp'] = datetime.now().isoformat()
+        
+        # Save results
+        filename = os.path.join(
+            OUTPUTS_DIR,
+            f"portfolio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        )
+        os.makedirs(OUTPUTS_DIR, exist_ok=True)
+        with open(filename, 'w') as f:
+            json.dump(result, f, indent=2)
+        
+        return {"status": "success", "data": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/portfolio/history")
+async def get_portfolio_history():
+    """Get all saved portfolio optimization results"""
+    try:
+        results = []
+        pattern = os.path.join(OUTPUTS_DIR, "portfolio_*.json")
+
+        for filepath in sorted(glob.glob(pattern), reverse=True)[:10]:
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+                data['filename'] = os.path.basename(filepath)
+                results.append(data)
+
+        return {"status": "success", "data": results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 

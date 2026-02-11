@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Optimizer - AutoHedge</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <h1>🤖 AutoHedge</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/backtest">Backtest</a>
+            <a href="/analysis">Live Analysis</a>
+            <a href="/portfolio" class="active">Portfolio Optimizer</a>
+            <a href="/history">History</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Portfolio Optimizer</h2>
+        <p class="subtitle">Modern Portfolio Theory - Efficient Frontier Analysis</p>
+
+        <!-- Configuration Form -->
+        <div class="card">
+            <h3>Configuration</h3>
+            <form id="optimizerForm">
+                <div class="form-group">
+                    <label>Stock Symbols (2-10 stocks)</label>
+                    <input type="text" id="stocks" placeholder="AAPL, MSFT, GOOGL, AMZN" required>
+                    <small>Comma-separated ticker symbols</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="startDate" value="2024-01-01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" id="endDate" value="2025-01-01" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Capital</label>
+                        <input type="number" id="capital" value="100000" min="1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Optimization Type</label>
+                        <select id="optimizationType">
+                            <option value="sharpe">Max Sharpe Ratio</option>
+                            <option value="min_vol">Min Volatility</option>
+                            <option value="target_return">Target Return</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" id="targetReturnGroup" style="display: none;">
+                    <label>Target Return (%)</label>
+                    <input type="number" id="targetReturn" step="0.01" placeholder="15">
+                    <small>Annual return target (e.g., 15 for 15%)</small>
+                </div>
+
+                <button type="submit" class="btn-primary">Optimize Portfolio</button>
+            </form>
+
+            <div id="loading" style="display: none;">
+                <p>⏳ Calculating optimal allocation...</p>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" style="display: none;">
+            <!-- Metrics -->
+            <div class="card">
+                <h3>Optimal Portfolio Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Expected Return</div>
+                        <div class="metric-value" id="optimalReturn">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Volatility (Risk)</div>
+                        <div class="metric-value" id="optimalVolatility">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Sharpe Ratio</div>
+                        <div class="metric-value" id="optimalSharpe">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Efficient Frontier Chart -->
+            <div class="card">
+                <h3>Efficient Frontier</h3>
+                <canvas id="frontierChart"></canvas>
+            </div>
+
+            <!-- Allocation Table -->
+            <div class="card">
+                <h3>Asset Allocation</h3>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Weight</th>
+                            <th>Allocation ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allocationTable">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="card">
+                <h3>Portfolio Composition</h3>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/portfolio.js"></script>
+</body>
+</html>
