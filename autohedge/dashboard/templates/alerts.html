@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerts - AutoHedge</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="nav">
+        <h1>🤖 AutoHedge</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/backtest">Backtest</a>
+            <a href="/analysis">Live Analysis</a>
+            <a href="/portfolio">Portfolio</a>
+            <a href="/alerts" class="active">Alerts</a>
+            <a href="/history">History</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div>
+                <h2>Alert Management</h2>
+                <p class="subtitle">Monitor prices and get notified</p>
+            </div>
+            <div>
+                <button class="btn-primary" onclick="showCreateAlert()">+ Create Alert</button>
+                <span id="monitorStatus" style="margin-left: 1rem; color: #7f8c8d;">
+                    <span class="status-dot"></span> Checking...
+                </span>
+            </div>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div class="card" id="notificationsPanel" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Recent Notifications (<span id="notifCount">0</span>)</h3>
+                <div>
+                    <button class="btn-secondary" onclick="loadNotifications()">Refresh</button>
+                    <button class="btn-secondary" onclick="clearNotifications()">Clear All</button>
+                </div>
+            </div>
+            <div id="notificationsList"></div>
+        </div>
+
+        <!-- Active Alerts -->
+        <div class="card">
+            <h3>Active Alerts</h3>
+            <div id="alertsList">
+                <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                    Loading alerts...
+                </p>
+            </div>
+        </div>
+
+        <!-- Create/Edit Alert Modal -->
+        <div id="alertModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h3 id="modalTitle">Create Alert</h3>
+                
+                <form id="alertForm">
+                    <div class="form-group">
+                        <label>Alert Name *</label>
+                        <input type="text" id="alertName" placeholder="e.g., AAPL High Price Alert" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Alert Type *</label>
+                            <select id="alertType" required>
+                                <option value="price">Price Alert</option>
+                                <option value="portfolio" disabled>Portfolio Alert (Coming Soon)</option>
+                                <option value="technical" disabled>Technical Alert (Coming Soon)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Stock Symbol *</label>
+                            <input type="text" id="alertStock" placeholder="AAPL" style="text-transform: uppercase;" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Condition *</label>
+                            <select id="alertCondition" required>
+                                <option value="above">Above</option>
+                                <option value="below">Below</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Threshold Price ($) *</label>
+                            <input type="number" id="alertThreshold" step="0.01" placeholder="200.00" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notification Channels *</label>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" name="channels" value="web" checked>
+                                <span>Web Dashboard</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" name="channels" value="email">
+                                <span>Email</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" name="channels" value="slack">
+                                <span>Slack</span>
+                            </label>
+                        </div>
+                        <small>Note: Email and Slack require configuration in environment variables</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cooldown Period (minutes)</label>
+                        <input type="number" id="alertCooldown" value="60" min="1" required>
+                        <small>Minimum time between notifications for this alert</small>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="btn-primary" style="flex: 1;">Save Alert</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal()" style="flex: 1;">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/alerts.js"></script>
+    
+    <style>
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #95a5a6;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.active {
+            background: #2ecc71;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #95a5a6;
+        }
+        
+        .close:hover {
+            color: #2c3e50;
+        }
+        
+        .alert-item {
+            border: 1px solid #ecf0f1;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .alert-item.disabled {
+            opacity: 0.6;
+        }
+        
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .alert-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.875rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-test {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-test:hover {
+            background: #2980b9;
+        }
+        
+        .btn-toggle {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-toggle:hover {
+            background: #7f8c8d;
+        }
+        
+        .btn-toggle.enabled {
+            background: #2ecc71;
+        }
+        
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .notification-item {
+            border-left: 3px solid #3498db;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .notification-item.unread {
+            background: #e8f4f8;
+            border-left-color: #2ecc71;
+        }
+    </style>
+</body>
+</html>

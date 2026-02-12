@@ -1,24 +1,44 @@
+version: '3.8'
+
 services:
   autohedge:
-    image: autohedge
+    build: .
     container_name: autohedge
     volumes:
-      - ./autohedge:/app/autohedge
       - ./outputs:/app/outputs
-      - ./agent_workspace:/app/agent_workspace
-    environment:
-      - OLLAMA_URL=http://ollama:11434
-      - OLLAMA_MODEL=qwen2.5:7b
-      - OUTPUT_DIR=/app/outputs
-      - WORKSPACE_DIR=/app/agent_workspace
+      - ./data:/app/data
     ports:
       - "8000:8000"
+    environment:
+      - OUTPUT_DIR=/app/outputs
+      # Alert System Environment Variables
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_PASSWORD=${SENDER_PASSWORD}
+      - RECIPIENT_EMAIL=${RECIPIENT_EMAIL}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - ALERT_CHECK_INTERVAL=${ALERT_CHECK_INTERVAL:-60}
+    env_file:
+      - .env
+    depends_on:
+      - ollama
     networks:
-      - ollama_default
-    stdin_open: true
-    tty: true
-    command: tail -f /dev/null
+      - autohedge-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - autohedge-network
 
 networks:
-  ollama_default:
-    external: true
+  autohedge-network:
+    driver: bridge
+
+volumes:
+  ollama-data:

@@ -16,6 +16,9 @@ from pydantic import BaseModel
 from ..backtesting import Backtester
 from ..data_providers import StockDataManager
 from ..portfolio_optimizer import PortfolioOptimizer
+from ..alerts.alert_engine import AlertEngine
+from ..alerts.models import AlertRule
+import uuid
 
 
 # Initialize FastAPI app
@@ -304,5 +307,286 @@ async def get_history():
                 results.append(data)
 
         return {"status": "success", "data": results}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# Initialize alert engine
+alert_engine = AlertEngine()
+
+@app.get("/alerts", response_class=HTMLResponse)
+async def alerts_page(request: Request):
+    """Alerts management page"""
+    return templates.TemplateResponse("alerts.html", {"request": request})
+
+@app.get("/api/alerts")
+async def get_alerts():
+    """Get all alerts"""
+    try:
+        return {"status": "success", "data": [a.dict() for a in alert_engine.alerts]}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/alerts")
+async def create_alert(request: Request):
+    """Create new alert"""
+    try:
+        data = await request.json()
+        alert = AlertRule(
+            id=str(uuid.uuid4()),
+            name=data['name'],
+            alert_type=data['alert_type'],
+            condition=data['condition'],
+            threshold=float(data['threshold']),
+            stock=data.get('stock'),
+            enabled=data.get('enabled', True),
+            notification_channels=data.get('notification_channels', ['web']),
+            cooldown_minutes=data.get('cooldown_minutes', 60),
+            created_at=datetime.now()
+        )
+        alert_engine.add_alert(alert)
+        return {"status": "success", "data": alert.dict()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.put("/api/alerts/{alert_id}")
+async def update_alert(alert_id: str, request: Request):
+    """Update alert"""
+    try:
+        data = await request.json()
+        alert = alert_engine.update_alert(alert_id, data)
+        if alert:
+            return {"status": "success", "data": alert.dict()}
+        return {"status": "error", "message": "Alert not found"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.delete("/api/alerts/{alert_id}")
+async def delete_alert(alert_id: str):
+    """Delete alert"""
+    try:
+        if alert_engine.delete_alert(alert_id):
+            return {"status": "success"}
+        return {"status": "error", "message": "Alert not found"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/alerts/notifications")
+async def get_notifications():
+    """Get web notifications"""
+    try:
+        return {
+            "status": "success",
+            "data": alert_engine.dispatcher.web_notifications[-50:]  # Last 50
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+# ============================================================
+# Alert System Routes (v7.0.0)
+# ============================================================
+
+from ..alerts import AlertEngine, AlertRule, AlertMonitor
+from datetime import datetime
+import uuid
+
+# Initialize alert system
+alert_engine = AlertEngine()
+alert_monitor = AlertMonitor(check_interval=60)  # Check every 60 seconds
+
+# Start background monitor
+alert_monitor.start()
+
+
+@app.get("/alerts", response_class=HTMLResponse)
+async def alerts_page(request: Request):
+    """Alerts management page"""
+    return templates.TemplateResponse("alerts.html", {"request": request})
+
+
+@app.get("/api/alerts")
+async def get_alerts():
+    """Get all alerts"""
+    try:
+        return {
+            "status": "success",
+            "data": [a.dict() for a in alert_engine.alerts]
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/alerts")
+async def create_alert(request: Request):
+    """Create new alert"""
+    try:
+        data = await request.json()
+        
+        alert = AlertRule(
+            id=str(uuid.uuid4()),
+            name=data['name'],
+            alert_type=data['alert_type'],
+            condition=data['condition'],
+            threshold=float(data['threshold']),
+            stock=data.get('stock'),
+            enabled=data.get('enabled', True),
+            notification_channels=data.get('notification_channels', ['web']),
+            cooldown_minutes=data.get('cooldown_minutes', 60),
+            created_at=datetime.now(),
+            last_triggered=None
+        )
+        
+        alert_engine.add_alert(alert)
+        
+        return {
+            "status": "success",
+            "data": alert.dict(),
+            "message": f"Alert '{alert.name}' created successfully"
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.put("/api/alerts/{alert_id}")
+async def update_alert(alert_id: str, request: Request):
+    """Update alert"""
+    try:
+        data = await request.json()
+        alert = alert_engine.update_alert(alert_id, data)
+        
+        if alert:
+            return {
+                "status": "success",
+                "data": alert.dict(),
+                "message": f"Alert updated successfully"
+            }
+        
+        return {"status": "error", "message": "Alert not found"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.delete("/api/alerts/{alert_id}")
+async def delete_alert(alert_id: str):
+    """Delete alert"""
+    try:
+        if alert_engine.delete_alert(alert_id):
+            return {
+                "status": "success",
+                "message": "Alert deleted successfully"
+            }
+        
+        return {"status": "error", "message": "Alert not found"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/alerts/{alert_id}/toggle")
+async def toggle_alert(alert_id: str):
+    """Toggle alert enabled/disabled"""
+    try:
+        alert = alert_engine.get_alert(alert_id)
+        
+        if alert:
+            alert.enabled = not alert.enabled
+            alert_engine.save_alerts()
+            
+            status = "enabled" if alert.enabled else "disabled"
+            return {
+                "status": "success",
+                "data": alert.dict(),
+                "message": f"Alert {status}"
+            }
+        
+        return {"status": "error", "message": "Alert not found"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/alerts/notifications")
+async def get_notifications():
+    """Get web notifications"""
+    try:
+        notifications = alert_engine.dispatcher.get_web_notifications(limit=50)
+        
+        return {
+            "status": "success",
+            "data": notifications,
+            "unread_count": len([n for n in notifications if not n.get('read', False)])
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/alerts/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str):
+    """Mark notification as read"""
+    try:
+        alert_engine.dispatcher.mark_as_read(notification_id)
+        return {"status": "success", "message": "Notification marked as read"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.delete("/api/alerts/notifications")
+async def clear_notifications():
+    """Clear all notifications"""
+    try:
+        alert_engine.dispatcher.clear_all()
+        return {"status": "success", "message": "All notifications cleared"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/alerts/monitor/status")
+async def get_monitor_status():
+    """Get alert monitor status"""
+    try:
+        status = alert_monitor.get_status()
+        return {"status": "success", "data": status}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/alerts/test/{alert_id}")
+async def test_alert(alert_id: str):
+    """Manually test an alert (ignores cooldown)"""
+    try:
+        alert = alert_engine.get_alert(alert_id)
+        
+        if not alert:
+            return {"status": "error", "message": "Alert not found"}
+        
+        # Temporarily clear cooldown
+        original_last_triggered = alert.last_triggered
+        alert.last_triggered = None
+        
+        # Check alert
+        notification = alert_engine.check_alert(alert)
+        
+        # Restore original cooldown
+        alert.last_triggered = original_last_triggered
+        
+        if notification:
+            channels = alert_engine.dispatcher.send(notification)
+            return {
+                "status": "success",
+                "message": f"Test alert sent to: {', '.join(channels)}",
+                "data": notification.dict()
+            }
+        else:
+            return {
+                "status": "info",
+                "message": "Alert condition not met or alert disabled"
+            }
+            
     except Exception as e:
         return {"status": "error", "message": str(e)}

@@ -29,3 +29,11 @@ trade_analysis_*.json
 # Environment
 .env
 .env.local
+
+# Environment variables (v7.0.0)
+.env
+data/alerts.json
+
+# Environment variables (v7.0.0)
+.env
+data/alerts.json
