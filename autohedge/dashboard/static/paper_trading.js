@@ -1,5 +1,6 @@
 let currentPortfolio = null;
 let performanceChart = null;
+let isProcessingOrder = false;
 
 // Load data on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,6 +23,22 @@ document.getElementById('orderForm').addEventListener('submit', async (e) => {
         order_type: document.getElementById('orderType').value
     };
     
+    await placeOrder(orderData);
+});
+
+// Update price preview when symbol/quantity changes
+document.getElementById('orderSymbol').addEventListener('input', updateOrderPreview);
+document.getElementById('orderQuantity').addEventListener('input', updateOrderPreview);
+
+async function placeOrder(orderData) {
+    if (isProcessingOrder) {
+        alert('Please wait, processing previous order...');
+        return;
+    }
+    
+    isProcessingOrder = true;
+    showLoadingOverlay('Placing order...');
+    
     try {
         const response = await fetch('/api/paper/order', {
             method: 'POST',
@@ -30,6 +47,8 @@ document.getElementById('orderForm').addEventListener('submit', async (e) => {
         });
         
         const result = await response.json();
+        
+        hideLoadingOverlay();
         
         if (result.status === 'success') {
             alert(result.message || 'Order placed successfully!');
@@ -41,13 +60,38 @@ document.getElementById('orderForm').addEventListener('submit', async (e) => {
             alert(`Error: ${result.message}`);
         }
     } catch (error) {
+        hideLoadingOverlay();
         alert(`Error: ${error.message}`);
+    } finally {
+        isProcessingOrder = false;
     }
-});
+}
 
-// Update price preview when symbol/quantity changes
-document.getElementById('orderSymbol').addEventListener('input', updateOrderPreview);
-document.getElementById('orderQuantity').addEventListener('input', updateOrderPreview);
+function showLoadingOverlay(message = 'Processing...') {
+    let overlay = document.getElementById('loadingOverlay');
+    
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'loadingOverlay';
+        overlay.innerHTML = `
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <div class="loading-message">${message}</div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    
+    overlay.style.display = 'flex';
+    overlay.querySelector('.loading-message').textContent = message;
+}
+
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
 
 async function updateOrderPreview() {
     const symbol = document.getElementById('orderSymbol').value.toUpperCase();
@@ -161,9 +205,8 @@ function displayHoldings(positions) {
                                 <small>(${pnlSign}${pos.unrealized_pnl_pct.toFixed(2)}%)</small>
                             </td>
                             <td>
-                                <button class="btn-small" onclick="quickSell('${pos.symbol}', ${pos.quantity})" 
-                                        style="background: #e74c3c; color: white; padding: 0.3rem 0.6rem; border: none; border-radius: 4px; cursor: pointer;">
-                                    Sell
+                                <button class="btn-small btn-sell" onclick="quickSell('${pos.symbol}', ${pos.quantity})">
+                                    Sell All
                                 </button>
                             </td>
                         </tr>
@@ -351,14 +394,20 @@ function closeOrderModal() {
     document.getElementById('orderModal').style.display = 'none';
 }
 
-function quickSell(symbol, quantity) {
-    if (confirm(`Sell all ${quantity} shares of ${symbol}?`)) {
-        document.getElementById('orderSymbol').value = symbol;
-        document.getElementById('orderSide').value = 'sell';
-        document.getElementById('orderQuantity').value = quantity;
-        showOrderModal();
-        updateOrderPreview();
+// Quick sell with loading indicator
+async function quickSell(symbol, quantity) {
+    if (!confirm(`Sell all ${quantity} shares of ${symbol} at market price?`)) {
+        return;
     }
+    
+    const orderData = {
+        symbol: symbol,
+        side: 'sell',
+        quantity: quantity,
+        order_type: 'market'
+    };
+    
+    await placeOrder(orderData);
 }
 
 async function resetPortfolio() {
@@ -366,12 +415,16 @@ async function resetPortfolio() {
         return;
     }
     
+    showLoadingOverlay('Resetting portfolio...');
+    
     try {
         const response = await fetch('/api/paper/portfolio/reset', {
             method: 'POST'
         });
         
         const result = await response.json();
+        
+        hideLoadingOverlay();
         
         if (result.status === 'success') {
             alert('Portfolio reset successfully!');
@@ -382,6 +435,7 @@ async function resetPortfolio() {
             alert(`Error: ${result.message}`);
         }
     } catch (error) {
+        hideLoadingOverlay();
         alert(`Error: ${error.message}`);
     }
 }
