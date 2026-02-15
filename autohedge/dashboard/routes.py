@@ -590,3 +590,206 @@ async def test_alert(alert_id: str):
             
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+# ============================================================
+# Paper Trading Routes (v8.0.0)
+# ============================================================
+
+from ..paper_trading import PortfolioManager, OrderEngine, PerformanceAnalytics
+from ..paper_trading.models import Portfolio, Order, Trade
+
+# Initialize paper trading system
+portfolio_manager = PortfolioManager()
+order_engine = OrderEngine(portfolio_manager)
+
+# Load or create default portfolio
+default_portfolio = portfolio_manager.load_portfolio("default")
+if not default_portfolio:
+    default_portfolio = portfolio_manager.create_portfolio(
+        name="My Paper Portfolio",
+        starting_capital=100000.00
+    )
+
+
+@app.get("/paper-trading", response_class=HTMLResponse)
+async def paper_trading_page(request: Request):
+    """Paper trading dashboard page"""
+    return templates.TemplateResponse("paper_trading.html", {"request": request})
+
+
+@app.get("/api/paper/portfolio")
+async def get_portfolio():
+    """Get current portfolio"""
+    try:
+        portfolio = portfolio_manager.current_portfolio
+        
+        if not portfolio:
+            return {"status": "error", "message": "No active portfolio"}
+        
+        # Update position prices
+        from ..data_providers import StockDataManager
+        data_manager = StockDataManager(primary="yfinance")
+        
+        price_data = {}
+        for position in portfolio.positions:
+            try:
+                stock_data = data_manager.get_stock_data(position.symbol)
+                price_data[position.symbol] = stock_data.get('current_price', 0)
+            except:
+                pass
+        
+        portfolio_manager.update_positions_prices(price_data)
+        
+        return {
+            "status": "success",
+            "data": portfolio.dict()
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/paper/portfolio/create")
+async def create_portfolio(request: Request):
+    """Create new portfolio"""
+    try:
+        data = await request.json()
+        
+        portfolio = portfolio_manager.create_portfolio(
+            name=data.get('name', 'My Paper Portfolio'),
+            starting_capital=float(data.get('starting_capital', 100000))
+        )
+        
+        return {
+            "status": "success",
+            "data": portfolio.dict(),
+            "message": f"Portfolio created with ${portfolio.starting_capital:,.2f}"
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/paper/portfolio/reset")
+async def reset_portfolio():
+    """Reset portfolio to starting capital"""
+    try:
+        portfolio_manager.reset_portfolio()
+        
+        # Clear order and trade history
+        order_engine.orders = []
+        order_engine.trades = []
+        order_engine.save_data()
+        
+        return {
+            "status": "success",
+            "message": "Portfolio reset successfully",
+            "data": portfolio_manager.current_portfolio.dict()
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/paper/order")
+async def place_order(request: Request):
+    """Place trading order"""
+    try:
+        data = await request.json()
+        
+        order = order_engine.place_order(
+            symbol=data['symbol'],
+            side=data['side'],
+            quantity=int(data['quantity']),
+            order_type=data.get('order_type', 'market'),
+            limit_price=data.get('limit_price')
+        )
+        
+        response = {
+            "status": "success" if order.status == "filled" else "error",
+            "data": order.dict()
+        }
+        
+        if order.status == "filled":
+            response["message"] = f"Order filled: {order.side.upper()} {order.quantity} {order.symbol} @ ${order.filled_price:.2f}"
+        elif order.status == "rejected":
+            response["message"] = order.rejection_reason
+        
+        return response
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/paper/orders")
+async def get_orders():
+    """Get order history"""
+    try:
+        orders = order_engine.get_order_history()
+        
+        return {
+            "status": "success",
+            "data": [order.dict() for order in orders]
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/paper/trades")
+async def get_trades():
+    """Get trade history"""
+    try:
+        trades = order_engine.get_trade_history()
+        
+        return {
+            "status": "success",
+            "data": [trade.dict() for trade in trades]
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/paper/performance")
+async def get_performance():
+    """Get performance metrics"""
+    try:
+        portfolio = portfolio_manager.current_portfolio
+        
+        if not portfolio:
+            return {"status": "error", "message": "No active portfolio"}
+        
+        analytics = PerformanceAnalytics(portfolio, order_engine.trades)
+        metrics = analytics.calculate_metrics()
+        daily_returns = analytics.get_daily_returns()
+        allocation = analytics.get_position_allocation()
+        
+        return {
+            "status": "success",
+            "data": {
+                "metrics": metrics.dict(),
+                "daily_returns": daily_returns,
+                "allocation": allocation
+            }
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.delete("/api/paper/order/{order_id}")
+async def cancel_order(order_id: str):
+    """Cancel pending order"""
+    try:
+        if order_engine.cancel_order(order_id):
+            return {
+                "status": "success",
+                "message": "Order cancelled"
+            }
+        
+        return {"status": "error", "message": "Order not found or cannot be cancelled"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

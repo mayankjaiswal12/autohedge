@@ -2,18 +2,21 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
+# Copy requirements and install dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt --break-system-packages || pip install --no-cache-dir -r requirements.txt
 
-COPY autohedge/ ./autohedge/
-COPY setup.py .
+# Copy application code
+COPY . .
+
+# Install the package
 RUN pip install -e .
 
-RUN mkdir -p outputs agent_workspace
+# Create output directory
+RUN mkdir -p /app/outputs /app/data
 
-ENV OLLAMA_URL=http://ollama:11434
-ENV OLLAMA_MODEL=qwen2.5:7b
+# Expose port
+EXPOSE 8000
 
-CMD ["/bin/bash"]
+# Keep container running - it will be started via make dashboard
+CMD ["tail", "-f", "/dev/null"]

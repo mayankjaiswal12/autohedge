@@ -10,6 +10,8 @@ from email.mime.multipart import MIMEMultipart
 from typing import Optional, List, Dict
 from datetime import datetime
 import os
+
+# Import models at the top to avoid circular import
 from .models import AlertNotification
 
 
@@ -106,7 +108,7 @@ class NotificationDispatcher:
     def __init__(self):
         self.email_notifier = EmailNotifier()
         self.slack_notifier = SlackNotifier()
-        self.web_notifications: List[Dict] = []  # Store for web dashboard
+        self.web_notifications: List[Dict] = []
         self.max_web_notifications = 100
     
     def send(self, notification: AlertNotification):
@@ -145,7 +147,6 @@ class NotificationDispatcher:
             "read": False
         })
         
-        # Keep only last N notifications
         if len(self.web_notifications) > self.max_web_notifications:
             self.web_notifications = self.web_notifications[:self.max_web_notifications]
     

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "order-0bdaf6a1",
+    "portfolio_id": "portfolio-20260215034638",
+    "symbol": "AAPL",
+    "order_type": "market",
+    "side": "buy",
+    "quantity": 10,
+    "limit_price": null,
+    "status": "filled",
+    "filled_price": 255.77999877929688,
+    "filled_quantity": 10,
+    "commission": 0.0,
+    "total_cost": 2557.7999877929688,
+    "created_at": "2026-02-15 03:48:48.784005",
+    "filled_at": "2026-02-15 03:48:49.237175",
+    "rejection_reason": null
+  }
+]

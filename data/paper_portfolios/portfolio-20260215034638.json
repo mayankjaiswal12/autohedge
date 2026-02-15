@@ -1,0 +1,24 @@
+{
+  "id": "portfolio-20260215034638",
+  "name": "My Paper Portfolio",
+  "starting_capital": 100000.0,
+  "cash_balance": 97442.20001220703,
+  "positions": [
+    {
+      "symbol": "AAPL",
+      "quantity": 10,
+      "average_price": 255.77999877929688,
+      "current_price": 255.77999877929688,
+      "market_value": 2557.7999877929688,
+      "cost_basis": 2557.7999877929688,
+      "unrealized_pnl": 0.0,
+      "unrealized_pnl_pct": 0.0
+    }
+  ],
+  "total_value": 100000.0,
+  "total_pnl": 0.0,
+  "total_pnl_pct": 0.0,
+  "total_invested": 2557.7999877929688,
+  "created_at": "2026-02-15 03:46:38.745279",
+  "updated_at": "2026-02-15 03:49:47.650482"
+}

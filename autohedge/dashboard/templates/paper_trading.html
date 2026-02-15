@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Trading - AutoHedge</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <h1>🤖 AutoHedge</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/backtest">Backtest</a>
+            <a href="/analysis">Live Analysis</a>
+            <a href="/portfolio">Portfolio</a>
+            <a href="/alerts">Alerts</a>
+            <a href="/paper-trading" class="active">Paper Trading</a>
+            <a href="/history">History</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div>
+                <h2>Paper Trading</h2>
+                <p class="subtitle">Virtual portfolio - Trade with $100,000 fake money</p>
+            </div>
+            <div>
+                <button class="btn-primary" onclick="showOrderModal()">+ Place Order</button>
+                <button class="btn-secondary" onclick="resetPortfolio()" style="margin-left: 0.5rem;">Reset Portfolio</button>
+            </div>
+        </div>
+
+        <!-- Account Summary -->
+        <div class="card">
+            <h3>Account Summary</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Value</div>
+                    <div class="metric-value" id="totalValue">$0.00</div>
+                    <div id="totalPnl" style="font-size: 0.9rem; margin-top: 0.5rem;">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Cash Balance</div>
+                    <div class="metric-value" id="cashBalance">$0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Invested</div>
+                    <div class="metric-value" id="invested">$0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Positions</div>
+                    <div class="metric-value" id="numPositions">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Holdings -->
+        <div class="card">
+            <h3>Current Holdings</h3>
+            <div id="holdingsTable">
+                <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                    No positions yet. Click "Place Order" to start trading!
+                </p>
+            </div>
+        </div>
+
+        <!-- Performance Chart -->
+        <div class="card" id="performanceCard" style="display: none;">
+            <h3>Performance</h3>
+            <canvas id="performanceChart"></canvas>
+        </div>
+
+        <!-- Recent Trades -->
+        <div class="card">
+            <h3>Recent Trades</h3>
+            <div id="tradesTable">
+                <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                    No trades yet
+                </p>
+            </div>
+        </div>
+
+        <!-- Order History -->
+        <div class="card">
+            <h3>Order History</h3>
+            <div id="ordersTable">
+                <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                    No orders yet
+                </p>
+            </div>
+        </div>
+
+        <!-- Order Modal -->
+        <div id="orderModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close" onclick="closeOrderModal()">&times;</span>
+                <h3>Place Order</h3>
+                
+                <form id="orderForm">
+                    <div class="form-group">
+                        <label>Stock Symbol *</label>
+                        <input type="text" id="orderSymbol" placeholder="AAPL" 
+                               style="text-transform: uppercase;" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Side *</label>
+                            <select id="orderSide" required>
+                                <option value="buy">Buy</option>
+                                <option value="sell">Sell</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Order Type *</label>
+                            <select id="orderType" required>
+                                <option value="market">Market Order</option>
+                                <option value="limit" disabled>Limit Order (Coming Soon)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantity *</label>
+                        <input type="number" id="orderQuantity" min="1" placeholder="10" required>
+                    </div>
+
+                    <div id="orderPreview" class="form-group" style="display: none;">
+                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Current Price:</span>
+                                <span id="previewPrice">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                                <span>Estimated Total:</span>
+                                <span id="previewTotal">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="btn-primary" style="flex: 1;">Place Order</button>
+                        <button type="button" class="btn-secondary" onclick="closeOrderModal()" style="flex: 1;">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/paper_trading.js"></script>
+    
+    <style>
+        .holdings-table, .trades-table, .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .holdings-table th,
+        .holdings-table td,
+        .trades-table th,
+        .trades-table td,
+        .orders-table th,
+        .orders-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .holdings-table th,
+        .trades-table th,
+        .orders-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .positive {
+            color: #2ecc71;
+        }
+        
+        .negative {
+            color: #e74c3c;
+        }
+        
+        .status-filled {
+            color: #2ecc71;
+        }
+        
+        .status-rejected {
+            color: #e74c3c;
+        }
+        
+        .status-pending {
+            color: #f39c12;
+        }
+    </style>
+</body>
+</html>
